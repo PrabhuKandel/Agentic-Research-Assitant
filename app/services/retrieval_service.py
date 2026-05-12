@@ -13,7 +13,7 @@ def retrieve_relevant_chunks(query: str, top_k: int = DEFAULT_TOP_K) -> list[tup
     return results
 
 if __name__ == "__main__":
-    query = "What is fine tuning?"
+    query = "What is Spherical linear interpolation?"
     retrieved_chunks = retrieve_relevant_chunks(query)
 
     print(f"Retrieved {len(retrieved_chunks)} relevant chunks for query: '{query}'")
