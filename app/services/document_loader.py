@@ -1,9 +1,8 @@
 from pathlib import Path
 from langchain_core.documents import Document
-from langchain_community.document_loaders import PyPDFLoader, TextLoader
+from langchain_community.document_loaders import PyPDFLoader, TextLoader, Docx2txtLoader
 
-
-SUPPORTED_EXTENSIONS = {".pdf", ".txt", ".md", ".markdown"}
+SUPPORTED_EXTENSIONS = {".pdf", ".txt", ".md", ".markdown", ".docx"}
 
 
 def load_document(file_path: str) -> list[Document]:
@@ -19,6 +18,10 @@ def load_document(file_path: str) -> list[Document]:
 
     if file_extension == ".pdf":
         loader = PyPDFLoader(str(path))
+
+    elif file_extension == ".docx":
+        loader = Docx2txtLoader(str(path))
+
     else:
         loader = TextLoader(str(path), encoding="utf-8")
 
@@ -29,6 +32,7 @@ def load_document(file_path: str) -> list[Document]:
         document.metadata["file_type"] = file_extension
 
     return documents
+
 
 if __name__ == "__main__":
     docs = load_document("data/uploads/PrabhuKandel-CV.pdf")
