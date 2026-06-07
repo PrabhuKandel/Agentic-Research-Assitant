@@ -34,7 +34,7 @@ def generate_response(
     llm = ChatGroq(
         model=config.llm_model,
         api_key=os.getenv("GROQ_API_KEY"),
-        temperature=config.temperature,
+        temperature=config.llm_temperature,
     )
 
     # Prepare retrieved chunks as grounded context
