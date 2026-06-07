@@ -32,10 +32,3 @@ def load_document(file_path: str) -> list[Document]:
         document.metadata["file_type"] = file_extension
 
     return documents
-
-
-if __name__ == "__main__":
-    docs = load_document("data/uploads/PrabhuKandel-CV.pdf")
-    print(docs)
-    # print(docs[0].metadata)
-    # print(docs[0].page_content)

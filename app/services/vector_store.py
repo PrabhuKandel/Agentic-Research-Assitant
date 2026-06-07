@@ -1,15 +1,10 @@
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from app.services.embedding_service import get_embedding_model
+from app.config import config
 
-DEFAULT_VECTOR_DB_PATH = "data/vector_db"
-DEFAULT_COLLECTION_NAME = "knowledge_base"
 
-def create_vector_store(
-        documents: list[Document], 
-        collection_name: str = DEFAULT_COLLECTION_NAME, 
-        persist_directory: str = DEFAULT_VECTOR_DB_PATH
-        ) -> Chroma:
+def create_vector_store( documents: list[Document]) -> Chroma:
     # Initialize the embedding model
     embedding_model = get_embedding_model()
 
@@ -17,34 +12,17 @@ def create_vector_store(
     vector_store = Chroma.from_documents(
         documents=documents,
         embedding=embedding_model,
-        collection_name=collection_name,
-        persist_directory=persist_directory
+        collection_name=config.collection_name,
+        persist_directory=config.vector_db_path
     )
 
 
     return vector_store
 
-def load_vector_store(
-        collection_name: str = DEFAULT_COLLECTION_NAME, 
-        persist_directory: str = DEFAULT_VECTOR_DB_PATH
-        ) -> Chroma:
+def load_vector_store( ) -> Chroma:
     
     # Load an existing Chroma vector store from the specified collection name and path
     embedding_model = get_embedding_model()
-    return Chroma(collection_name=collection_name, persist_directory=persist_directory, embedding_function=embedding_model)
+    return Chroma(collection_name=config.collection_name, persist_directory=config.vector_db_path, embedding_function=embedding_model)
 
 
-if __name__ == "__main__":
-    vector_store = load_vector_store()
-
-    results = vector_store.similarity_search(
-        "What is fine tuning?",
-        k=3,
-    )
-
-    print(f"Retrieved results: {len(results)}")
-
-    for index, result in enumerate(results, start=1):
-        print(f"\n--- Result {index} ---")
-        print("Metadata:", result.metadata)
-        print("Preview:", result.page_content[:1000])

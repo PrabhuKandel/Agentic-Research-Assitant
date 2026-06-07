@@ -3,9 +3,8 @@ from dotenv import load_dotenv
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
+from app.config import config
 
-
-DEFAULT_LLM_MODEL = "llama-3.1-8b-instant"
 
 
 def format_context(retrieved_documents: list[Document]) -> str:
@@ -21,64 +20,49 @@ def format_context(retrieved_documents: list[Document]) -> str:
             f"{document.page_content}"
         )
 
-
     return "\n\n".join(context_parts)
 
+
 def generate_response(
-    query: str,
-    retrieved_documents: list[Document], 
-    llm_model: str = DEFAULT_LLM_MODEL
-    ) -> str:
+    query: str, retrieved_documents: list[Document]
+) -> str:
 
     # Load environment variables from .env file
     load_dotenv()
 
     # Create groq chat model for response generation
     llm = ChatGroq(
-        model=llm_model,
+        model=config.llm_model,
         api_key=os.getenv("GROQ_API_KEY"),
-        temperature=0.2,
-        )
-    
+        temperature=config.temperature,
+    )
+
     # Prepare retrieved chunks as grounded context
     context = format_context(retrieved_documents)
-
-    print("Generated context for LLM:", context)
 
     # Create a prompt template for the LLM
     # Keep the prompt strict so the model answers only from retrieved context
     prompt_template = ChatPromptTemplate.from_messages(
         [
-            ("system", "You are a helpful research assistant. Answer the user using only the provided context."
-            "If the answer is not in the context, say you do not have enough information."),
-            ("user",  "Question:\n{question}\n\nContext:\n{context}\n\nAnswer:"),
+            (
+                "system",
+                "You are a helpful research assistant. Answer the user using only the provided context."
+                "If the answer is not in the context, say you do not have enough information.",
+            ),
+            ("user", "Question:\n{question}\n\nContext:\n{context}\n\nAnswer:"),
         ]
     )
 
     chain = prompt_template | llm
 
     # Generate the response using the LLM
-    response = chain.invoke(    {
-        "question": query,
-        "context": context,
-    })
+    response = chain.invoke(
+        {
+            "question": query,
+            "context": context,
+        }
+    )
 
     return response.content
 
-
-if __name__ == "__main__":
-    from app.services.retrieval_service import retrieve_relevant_chunks
-
-    query = "What is Accelerator?"
-
-    retrieved_results = retrieve_relevant_chunks(query, top_k=5)
-
-    # Extract only Document objects from (Document, score) pairs
-    retrieved_documents = [document for document, score in retrieved_results]
-
-    answer = generate_response(query, retrieved_documents)
-
-    print("Question:", query)
-    print("\nAnswer:")
-    print(answer)
 
