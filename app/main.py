@@ -3,8 +3,10 @@ from pathlib import Path as FilePath
 
 from fastapi import FastAPI, HTTPException, Path, UploadFile, status
 
+from app.api.schemas.chat import ChatQueryRequest, ChatQueryResponse
 from app.api.schemas.document import DocumentUploadResponse
 from app.services.ingestion_pipeline import ingest_document
+from app.services.rag_pipeline import run_rag_pipeline
 
 app = FastAPI(
 
@@ -57,5 +59,25 @@ def upload_document(file:UploadFile) -> DocumentUploadResponse:
     
     finally:
         file.file.close()
+
+
+@app.post(
+    "/chat/query",
+    response_model=ChatQueryResponse,
+    status_code=status.HTTP_200_OK,
+)
+def query_chat(request: ChatQueryRequest) -> ChatQueryResponse:
+    """Answer a user question using the RAG pipeline."""
+
+    try:
+        result = run_rag_pipeline(request.query)
+
+        return ChatQueryResponse(**result)
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate chat response: {error}",
+        )
 
   
