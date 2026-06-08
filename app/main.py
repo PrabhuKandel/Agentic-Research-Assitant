@@ -1,4 +1,10 @@
-from fastapi import FastAPI
+from shutil import copyfileobj
+from pathlib import Path as FilePath
+
+from fastapi import FastAPI, HTTPException, Path, UploadFile, status
+
+from app.api.schemas.document import DocumentUploadResponse
+from app.services.ingestion_pipeline import ingest_document
 
 app = FastAPI(
 
@@ -13,3 +19,43 @@ def health_check()->dict[str, str]:
         "status": "ok", 
         "message": "Agentic Research Assistant API is running."
         }
+
+@app.post(
+        "/documents/upload",
+        response_model = DocumentUploadResponse,
+        status_code = status.HTTP_201_CREATED,
+        )
+def upload_document(file:UploadFile) -> DocumentUploadResponse:
+
+    if not file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file must have a filename."
+        )
+    
+    upload_dir = FilePath("data/uploads")
+    upload_dir.mkdir(exist_ok=True)
+
+    file_path = upload_dir / file.filename
+
+    try:
+        with file_path.open("wb") as buffer:
+            copyfileobj(file.file, buffer)
+
+        ingest_document(str(file_path))
+
+        return DocumentUploadResponse(
+            filename=file.filename,
+            message="Document uploaded and ingested successfully."
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to upload document: {e}",
+        )
+    
+    finally:
+        file.file.close()
+
+  
