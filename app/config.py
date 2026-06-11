@@ -15,10 +15,7 @@ class AppSettings(BaseSettings):
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     embedding_dimension: int = 384
 
-    database_url: str = (
-        "postgresql+psycopg://postgres:postgres@localhost:5432/healthcare_rag"
-    )
-
+    database_url: str
     upload_dir: str = "data/uploads"
     max_upload_size_mb: int = 20
 
