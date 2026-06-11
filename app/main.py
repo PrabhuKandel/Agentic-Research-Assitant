@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException, Path, UploadFile, status
 
 from app.api.schemas.chat import ChatQueryRequest, ChatQueryResponse
 from app.api.schemas.document import DocumentUploadResponse
+from app.services.file_storage import save_upload_file
 from app.services.ingestion_pipeline import ingest_document
 from app.services.rag_pipeline import run_rag_pipeline
 
@@ -28,27 +29,21 @@ def health_check()->dict[str, str]:
         status_code = status.HTTP_201_CREATED,
         )
 def upload_document(file:UploadFile) -> DocumentUploadResponse:
-
-    if not file.filename:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Uploaded file must have a filename."
-        )
-    
-    upload_dir = FilePath("data/uploads")
-    upload_dir.mkdir(exist_ok=True)
-
-    file_path = upload_dir / file.filename
-
+ 
     try:
-        with file_path.open("wb") as buffer:
-            copyfileobj(file.file, buffer)
-
-        ingest_document(str(file_path))
+        saved_file_path, original_filename = save_upload_file(file)
+      
+        ingest_document(str(saved_file_path))
 
         return DocumentUploadResponse(
-            filename=file.filename,
+            filename=original_filename,
             message="Document uploaded and ingested successfully."
+        )
+    
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(error),
         )
 
     except Exception as e:
