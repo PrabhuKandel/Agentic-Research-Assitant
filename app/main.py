@@ -54,7 +54,7 @@ def upload_document(file:UploadFile) -> DocumentUploadResponse:
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to upload document: {e}",
+            detail=f"Failed to upload document: {e}",
         )
     
     finally:

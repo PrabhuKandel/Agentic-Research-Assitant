@@ -6,3 +6,4 @@ data/uploads/
 data/processed/
 data/vector_db/
 .ipynb_checkpoints/
+check_chroma.py

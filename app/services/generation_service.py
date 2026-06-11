@@ -1,9 +1,7 @@
-import os
-from dotenv import load_dotenv
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
-from app.config import config
+from app.config import settings
 
 
 
@@ -27,14 +25,13 @@ def generate_response(
     query: str, retrieved_documents: list[Document]
 ) -> str:
 
-    # Load environment variables from .env file
-    load_dotenv()
-
+   
+  
     # Create groq chat model for response generation
     llm = ChatGroq(
-        model=config.llm_model,
-        api_key=os.getenv("GROQ_API_KEY"),
-        temperature=config.llm_temperature,
+        model=settings.llm_model,
+        api_key=settings.groq_api_key,
+        temperature=settings.llm_temperature,
     )
 
     # Prepare retrieved chunks as grounded context

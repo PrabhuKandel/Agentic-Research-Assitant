@@ -1,10 +1,10 @@
 from langchain_core.documents import Document
 from app.services.vector_store import load_vector_store
-from app.config import config
+from app.config import settings
 
 
 
-def retrieve_relevant_chunks(query: str, top_k: int = config.top_k) -> list[tuple[Document, float]]:
+def retrieve_relevant_chunks(query: str, top_k: int = settings.top_k) -> list[tuple[Document, float]]:
     # Load the existing vector store
     vector_store = load_vector_store()
 
