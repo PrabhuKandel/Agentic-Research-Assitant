@@ -1,7 +1,9 @@
-from shutil import copyfileobj
 from pathlib import Path as FilePath
 
-from fastapi import FastAPI, HTTPException, Path, UploadFile, status
+from app.db.session import get_db
+from sqlalchemy.orm import Session
+
+from fastapi import Depends, FastAPI, HTTPException, Path, UploadFile, status
 
 from app.api.schemas.chat import ChatQueryRequest, ChatQueryResponse
 from app.api.schemas.document import DocumentUploadResponse
@@ -28,15 +30,19 @@ def health_check()->dict[str, str]:
         response_model = DocumentUploadResponse,
         status_code = status.HTTP_201_CREATED,
         )
-def upload_document(file:UploadFile) -> DocumentUploadResponse:
+def upload_document(
+    file:UploadFile,
+    db:Session = Depends(get_db)
+    ) -> DocumentUploadResponse:
  
     try:
         saved_file_path, original_filename = save_upload_file(file)
       
-        ingest_document(str(saved_file_path))
+        result = ingest_document(str(saved_file_path),original_filename, db)
 
         return DocumentUploadResponse(
             filename=original_filename,
+            document_id=result["document_id"],
             message="Document uploaded and ingested successfully."
         )
     
@@ -61,11 +67,14 @@ def upload_document(file:UploadFile) -> DocumentUploadResponse:
     response_model=ChatQueryResponse,
     status_code=status.HTTP_200_OK,
 )
-def query_chat(request: ChatQueryRequest) -> ChatQueryResponse:
+def query_chat(
+    request: ChatQueryRequest,
+    db: Session = Depends(get_db)
+) -> ChatQueryResponse:
     """Answer a user question using the RAG pipeline."""
 
     try:
-        result = run_rag_pipeline(request.query)
+        result = run_rag_pipeline(request.query, db)
 
         return ChatQueryResponse(**result)
 

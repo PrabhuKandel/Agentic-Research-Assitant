@@ -1,4 +1,4 @@
-from app.models.document import Document, DocumentChunk
+from app.models.document import Document, DocumentChunk, DocumentStatus
 
-# Allows: from app.models import Document, DocumentChunk instead of importing from app.models.document.
-__all__ = ["Document", "DocumentChunk"]
+# Allows importing models from app.models instead of app.models.document.
+__all__ = ["Document", "DocumentChunk", "DocumentStatus"]

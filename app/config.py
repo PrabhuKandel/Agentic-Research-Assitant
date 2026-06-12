@@ -17,7 +17,7 @@ class AppSettings(BaseSettings):
 
     database_url: str
     upload_dir: str = "data/uploads"
-    max_upload_size_mb: int = 20
+    max_upload_size_mb: int = 50
 
     chunk_size: int = 1000
     chunk_overlap: int = 200

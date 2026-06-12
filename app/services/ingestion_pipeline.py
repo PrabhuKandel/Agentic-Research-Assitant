@@ -1,11 +1,13 @@
 from pathlib import Path
 
+from sqlalchemy.orm import Session
+
 from app.services.chunker import chunk_documents
 from app.services.document_loader import load_document
 from app.services.text_preprocessor import preprocess_documents
-from app.services.vector_store import create_vector_store
+from app.services.postgres_vector_store import store_document_chunks
 
-def ingest_document(file_path:str)->dict:
+def ingest_document(file_path:str,original_filename:str, db:Session)->dict:
 
     #validate the document path early so ingestion fails with a clear error
     path = Path(file_path)
@@ -24,12 +26,13 @@ def ingest_document(file_path:str)->dict:
     chunks = chunk_documents(cleaned_documents)
 
     # Store chunks and embeddings in the vector database
-    create_vector_store(chunks)
+    stored_document = store_document_chunks(db, file_path, original_filename, chunks)
 
     return {
+        "document_id": str(stored_document.id),
         "source_file": path.name,
         "loaded_documents": len(documents),
         "chunks_created": len(chunks),
-        "status": "success",
+        "status": stored_document.status,
     }
 

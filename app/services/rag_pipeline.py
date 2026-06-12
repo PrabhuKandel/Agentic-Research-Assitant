@@ -2,12 +2,13 @@ from langchain_core.documents import Document
 from .generation_service import generate_response
 from .retrieval_service import retrieve_relevant_chunks
 from app.config import settings
+from sqlalchemy.orm import Session
 
 
 
-def run_rag_pipeline(query: str) -> str:
+def run_rag_pipeline(query: str, db: Session) -> str:
     # Step 1: Retrieve relevant chunks from the vector database
-    retrieved_results = retrieve_relevant_chunks(query, top_k=settings.top_k)
+    retrieved_results = retrieve_relevant_chunks(query,db, top_k=settings.top_k)
 
     # Extract only Document objects from (Document, score) pairs
     retrieved_documents = [document for document, score in retrieved_results]

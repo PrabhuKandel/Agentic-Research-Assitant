@@ -32,7 +32,7 @@ class Document( Base):
     file_type: Mapped[str] = mapped_column(String(20), nullable=False)
 
     # Tracks whether the document is uploaded, processing, ready, failed, or archived.
-    status: Mapped[DocumentStatus] = mapped_column(
+    status: Mapped[str] = mapped_column(
          String(20), 
          nullable=False,
          default=DocumentStatus.UPLOADED.value 
