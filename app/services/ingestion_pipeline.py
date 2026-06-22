@@ -18,12 +18,32 @@ def ingest_document(file_path:str,original_filename:str, db:Session)->dict:
     # Load raw docuement pages/content using the document loader
     documents = load_document(file_path)
 
+    # Some loaders can return an empty list for unreadable or empty documents.
+    if not documents:
+        raise ValueError("No readable content found in the document.")
+
+
     # Clean extracted text before chunking
     cleaned_documents = preprocess_documents(documents)
+
+    # A document can load successfully but still contain no extractable text,
+    # for example scanned PDFs or image-only PDFs.
+    has_readable_text = any(
+        document.page_content.strip()
+        for document in cleaned_documents
+    )
+
+    if not has_readable_text:
+        raise ValueError("Document does not contain readable text.")
 
 
     # Split cleaned documents into smaller retrievable chunks
     chunks = chunk_documents(cleaned_documents)
+
+        # If chunking produces nothing, there is nothing useful to embed or store.
+    if not chunks:
+        raise ValueError("No chunks could be created from the document.")
+
 
     # Store chunks and embeddings in the vector database
     stored_document = store_document_chunks(db, file_path, original_filename, chunks)

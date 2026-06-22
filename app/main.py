@@ -11,12 +11,16 @@ from app.services.file_storage import save_upload_file
 from app.services.ingestion_pipeline import ingest_document
 from app.services.rag_pipeline import run_rag_pipeline
 
+from app.api.routes.documents import router as document_router
+
 app = FastAPI(
 
     title="Agentic Research Assistant API",
     description="API for ingesting documents and querying the agentic research assistant.",
     version="1.0.0",
 )
+
+app.include_router(document_router)
 
 @app.get("/")
 def health_check()->dict[str, str]:
@@ -34,6 +38,8 @@ def upload_document(
     file:UploadFile,
     db:Session = Depends(get_db)
     ) -> DocumentUploadResponse:
+
+    saved_file_path:FilePath|None = None
  
     try:
         saved_file_path, original_filename = save_upload_file(file)
@@ -47,12 +53,20 @@ def upload_document(
         )
     
     except ValueError as error:
+        # If validation or ingestion fails after saving the file,
+        # remove the uploaded file so folder and DB do not go out of sync.
+        if saved_file_path is not None and saved_file_path.exists():
+            saved_file_path.unlink(missing_ok=True)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(error),
         )
 
     except Exception as e:
+        # If unexpected errors happen after saving the file,
+        # clean up the uploaded file before returning 500.
+        if saved_file_path is not None and saved_file_path.exists():
+            saved_file_path.unlink(missing_ok=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to upload document: {e}",
