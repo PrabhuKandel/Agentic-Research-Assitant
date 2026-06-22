@@ -1,12 +1,17 @@
-from shutil import copyfileobj
 from pathlib import Path as FilePath
 
-from fastapi import FastAPI, HTTPException, Path, UploadFile, status
+from app.db.session import get_db
+from sqlalchemy.orm import Session
+
+from fastapi import Depends, FastAPI, HTTPException, Path, UploadFile, status
 
 from app.api.schemas.chat import ChatQueryRequest, ChatQueryResponse
 from app.api.schemas.document import DocumentUploadResponse
+from app.services.file_storage import save_upload_file
 from app.services.ingestion_pipeline import ingest_document
 from app.services.rag_pipeline import run_rag_pipeline
+
+from app.api.routes.documents import router as document_router
 
 app = FastAPI(
 
@@ -14,6 +19,8 @@ app = FastAPI(
     description="API for ingesting documents and querying the agentic research assistant.",
     version="1.0.0",
 )
+
+app.include_router(document_router)
 
 @app.get("/")
 def health_check()->dict[str, str]:
@@ -27,34 +34,42 @@ def health_check()->dict[str, str]:
         response_model = DocumentUploadResponse,
         status_code = status.HTTP_201_CREATED,
         )
-def upload_document(file:UploadFile) -> DocumentUploadResponse:
+def upload_document(
+    file:UploadFile,
+    db:Session = Depends(get_db)
+    ) -> DocumentUploadResponse:
 
-    if not file.filename:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Uploaded file must have a filename."
-        )
-    
-    upload_dir = FilePath("data/uploads")
-    upload_dir.mkdir(exist_ok=True)
-
-    file_path = upload_dir / file.filename
-
+    saved_file_path:FilePath|None = None
+ 
     try:
-        with file_path.open("wb") as buffer:
-            copyfileobj(file.file, buffer)
-
-        ingest_document(str(file_path))
+        saved_file_path, original_filename = save_upload_file(file)
+      
+        result = ingest_document(str(saved_file_path),original_filename, db)
 
         return DocumentUploadResponse(
-            filename=file.filename,
+            filename=original_filename,
+            document_id=result["document_id"],
             message="Document uploaded and ingested successfully."
+        )
+    
+    except ValueError as error:
+        # If validation or ingestion fails after saving the file,
+        # remove the uploaded file so folder and DB do not go out of sync.
+        if saved_file_path is not None and saved_file_path.exists():
+            saved_file_path.unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(error),
         )
 
     except Exception as e:
+        # If unexpected errors happen after saving the file,
+        # clean up the uploaded file before returning 500.
+        if saved_file_path is not None and saved_file_path.exists():
+            saved_file_path.unlink(missing_ok=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to upload document: {e}",
+            detail=f"Failed to upload document: {e}",
         )
     
     finally:
@@ -66,11 +81,14 @@ def upload_document(file:UploadFile) -> DocumentUploadResponse:
     response_model=ChatQueryResponse,
     status_code=status.HTTP_200_OK,
 )
-def query_chat(request: ChatQueryRequest) -> ChatQueryResponse:
+def query_chat(
+    request: ChatQueryRequest,
+    db: Session = Depends(get_db)
+) -> ChatQueryResponse:
     """Answer a user question using the RAG pipeline."""
 
     try:
-        result = run_rag_pipeline(request.query)
+        result = run_rag_pipeline(request.query, db)
 
         return ChatQueryResponse(**result)
 

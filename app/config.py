@@ -1,29 +1,33 @@
-from dataclasses import dataclass
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-@dataclass(frozen=True)
-class AppConfig:
-    # Embedding model used for converting text chunks and queries into vectors
-    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+class AppSettings(BaseSettings):
+    app_name: str = "Healthcare RAG Assistant"
+    environment: str = "development"
 
-    # LLM model served through Groq for answer generation
+    groq_api_key: str
     llm_model: str = "llama-3.1-8b-instant"
-
-    # Controls LLM randomness; lower is better for grounded RAG answers
     llm_temperature: float = 0.2
 
-    # Local path where ChromaDB stores vector data
-    vector_db_path: str = "data/vector_db"
+    vector_db_path: str = "./data/vector_db"
+    chroma_collection_name: str = "knowledge_base"
 
-    # ChromaDB collection name for stored knowledge chunks
-    collection_name: str = "knowledge_base"
+    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    embedding_dimension: int = 384
 
-    # Default chunking configuration
+    database_url: str
+    upload_dir: str = "data/uploads"
+    max_upload_size_mb: int = 50
+
     chunk_size: int = 1000
     chunk_overlap: int = 200
-
-    # Default number of chunks retrieved per query
     top_k: int = 5
 
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
-config = AppConfig()
+
+settings = AppSettings()
