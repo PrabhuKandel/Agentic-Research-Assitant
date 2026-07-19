@@ -1,23 +1,57 @@
+from datetime import datetime
+from uuid import UUID
+
 from pydantic import BaseModel, Field
 
-class ChatQueryRequest(BaseModel):
-    query:str = Field(
-        ...,
-        min_length=1,
-        description="User question to answer using the RAG pipeline."
+class ChatResponse(BaseModel):
+    id: UUID
+    title: str
+    created_at: datetime
+    updated_at: datetime
 
-    )
+    model_config = {
+    "from_attributes": True
+}
 
-class SourceResponse(BaseModel):
-    """Source metadata returned with the generated answer"""
-    source_file:str|None =None
-    page:int|None = None
-    score:float|None = None
-    preview:str|None = None
+class ChatListResponse(BaseModel):
+    chats: list[ChatResponse] 
+
+class MessageResponse(BaseModel):
+    id: UUID
+    chat_id: UUID
+    role: str
+    content: str
+    created_at: datetime
+
+    model_config = {
+    "from_attributes": True
+}
 
 
-class ChatQueryResponse(BaseModel):
-    """Response body returned by the RAG pipeline"""
-    query:str
-    answer:str
-    sources:list[SourceResponse]
+class MessageListResponse(BaseModel):
+    messages: list[MessageResponse]
+
+
+class ChatDetailResponse(BaseModel):
+    id: UUID
+    title: str
+    created_at: datetime
+    updated_at: datetime
+    messages: list[MessageResponse]
+
+
+class ChatCreateResponse(BaseModel):
+    id: UUID
+    title: str
+
+
+class ChatDeleteResponse(BaseModel):
+    message: str
+
+
+class MessageCreateRequest(BaseModel):
+    content: str
+
+
+class MessageCreateResponse(BaseModel):
+    answer: str

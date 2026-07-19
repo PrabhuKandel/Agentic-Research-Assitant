@@ -5,13 +5,14 @@ from sqlalchemy.orm import Session
 
 from fastapi import Depends, FastAPI, HTTPException, Path, UploadFile, status
 
-from app.api.schemas.chat import ChatQueryRequest, ChatQueryResponse
+from app.api.schemas.rag import ChatQueryRequest, ChatQueryResponse
 from app.api.schemas.document import DocumentUploadResponse
 from app.services.file_storage import save_upload_file
 from app.services.ingestion_pipeline import ingest_document
 from app.services.rag_pipeline import run_rag_pipeline
 
 from app.api.routes.documents import router as document_router
+from app.api.routes.chats import router as chat_router
 
 app = FastAPI(
 
@@ -21,6 +22,8 @@ app = FastAPI(
 )
 
 app.include_router(document_router)
+app.include_router(chat_router)
+
 
 @app.get("/")
 def health_check()->dict[str, str]:
