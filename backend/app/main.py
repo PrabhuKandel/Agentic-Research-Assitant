@@ -13,6 +13,7 @@ from app.services.rag_pipeline import run_rag_pipeline
 
 from app.api.routes.documents import router as document_router
 from app.api.routes.chats import router as chat_router
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
 
@@ -20,6 +21,19 @@ app = FastAPI(
     description="API for ingesting documents and querying the agentic research assistant.",
     version="1.0.0",
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://192.168.18.17:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 app.include_router(document_router)
 app.include_router(chat_router)

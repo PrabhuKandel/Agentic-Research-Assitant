@@ -21,11 +21,31 @@ from app.services.chat_service import (
     delete_chat,
     get_chat,
     list_chats,
+
 )
 from app.services.rag_pipeline import run_rag_pipeline
 
 
 router = APIRouter(prefix="/chats", tags=["chats"])
+
+
+def create_chat_title(question: str) -> str:
+    """
+    Create a simple title using the first six words
+    of the user's first question.
+    """
+    words = question.strip().split()
+
+    if not words:
+        return "New Chat"
+
+    title = " ".join(words[:6])
+
+    if len(words) > 6:
+        title += "..."
+
+    return title
+
 
 @router.post("", response_model=ChatCreateResponse, status_code=status.HTTP_201_CREATED)
 def create_new_chat(
@@ -96,6 +116,8 @@ def send_message_to_chat(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Chat not found.",
         )
+    
+    is_first_message = len(chat.messages) == 0
 
     # Save user message to the database
     create_message(
@@ -115,4 +137,11 @@ def send_message_to_chat(
         role="assistant",
         content=response["answer"],
     )
+
+    if is_first_message and chat.title == "New Chat":
+        chat.title = create_chat_title(request.query)
+        db.commit()
+        db.refresh(chat)
+
+
     return ChatQueryResponse(**response)

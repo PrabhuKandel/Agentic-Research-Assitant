@@ -40,7 +40,8 @@ def store_document_chunks(
                 chunk_index=index,
                 content=chunk.page_content,
                 embedding=embeddings[index],  # Use the computed embedding
-                source_file=chunk.metadata.get("source_file", Path(file_path).name),
+                # source_file=chunk.metadata.get("source_file", Path(file_path).name),
+                source_file = original_filename,
                 source_type=chunk.metadata.get("file_type", document.file_type),
                 page=chunk.metadata.get("page"),
                 section=chunk.metadata.get("section"),

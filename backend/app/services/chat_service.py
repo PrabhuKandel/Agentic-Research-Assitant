@@ -1,8 +1,7 @@
 from uuid import UUID
 from sqlalchemy.orm import Session
 from app.models.chat import Chat, Message
-print("CHAT SERVICE MESSAGE:", Message)
-print("MODULE:", Message.__module__)
+
 
 def create_chat(db:Session)->Chat:
     """Create a new chat and return the Chat object."""
@@ -46,4 +45,5 @@ def create_message(
     db.refresh(new_message)
     
     return new_message
+
 
